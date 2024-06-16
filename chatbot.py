@@ -67,6 +67,11 @@ vectorizer = CountVectorizer()
 X = vectorizer.fit_transform(todas_frases)
 y = np.array(rotulos)
 
+print("Vocabulário:", vectorizer.get_feature_names_out())
+
+X_denso = X.todense()
+print("Matriz de Contagem de Tokens:")
+print(X_denso)
 
 model = MultinomialNB()
 model.fit(X, y)
@@ -115,17 +120,18 @@ def timeout():
     timer = threading.Timer(60.0, finalizar_sessao)
     timer.start()
 
+def solicitar_avaliacao():
+    avaliacao = simpledialog.askinteger("Avaliação", "Por favor, avalie nosso atendimento (0 a 5):", minvalue=0, maxvalue=5)
+    if avaliacao is not None:
+        messagebox.showinfo("Obrigado!", f"Você avaliou nosso atendimento com nota {avaliacao}. Obrigado pelo feedback!")
+    else:
+        messagebox.showinfo("Obrigado!", "Você não forneceu uma avaliação. Obrigado pelo seu tempo!")
+
 def finalizar_sessao():
     chat_log.config(state=tk.NORMAL)
-    chat_log.insert(tk.END, "Iguinho: Obrigado! Espero ter te ajudado! Sessão encerrada..\n", 'chatbot')
+    chat_log.insert(tk.END, "Iguinho: Obrigado! Espero ter te ajudado! Sessão encerrada.\n", 'chatbot')
     chat_log.config(state=tk.DISABLED)
-    pedir_avaliacao()
-
-def pedir_avaliacao():
-    nota = simpledialog.askinteger("Avaliação", "Por favor, avalie o atendimento de 0 a 5:")
-    if nota is not None:
-        messagebox.showinfo("Avaliação", f"Obrigado pela sua avaliação de {nota}!")
-    janela.destroy()
+    solicitar_avaliacao()
 
 def reset_timer():
     global timer, inatividade
@@ -134,24 +140,22 @@ def reset_timer():
         resposta = entrada_usuario.get().strip().lower()
         if resposta in ['sim', 'sim!', 'desejo continuar', 'continuar']:
             chat_log.insert(tk.END, "Iguinho: Tudo bem, vamos continuar! Qual é sua outra dúvida sobre segurança da informação?\n", 'chatbot')
-            inatividade = False
-            chat_log.config(state=tk.DISABLED)
-            reset_timer()
-            return
         elif resposta in ['não', 'nao', 'não!', 'nao!', 'não desejo continuar', 'não desejo continuar!', 'nao desejo continuar', 'nao desejo continuar!', 'pode encerrar', 'encerrar']:
             finalizar_sessao()
-            return
         else:
             chat_log.insert(tk.END, "Iguinho: Não entendi bem. Vamos continuar! Qual é sua dúvida sobre segurança da informação?\n", 'chatbot')
-            inatividade = False
         chat_log.config(state=tk.DISABLED)
+        inatividade = False
     if timer is not None:
         timer.cancel()
     timer = threading.Timer(60.0, timeout)
     timer.start()
 
 def finalizar_sessao_botao():
-    finalizar_sessao()
+    chat_log.config(state=tk.NORMAL)
+    chat_log.insert(tk.END, "Iguinho: Sessão encerrada pelo usuário.\n", 'chatbot')
+    chat_log.config(state=tk.DISABLED)
+    solicitar_avaliacao()
 
 inatividade = False
 timer = None
@@ -163,16 +167,17 @@ janela.geometry("500x550")
 chat_log = scrolledtext.ScrolledText(janela, wrap=tk.WORD, bg="white", state=tk.DISABLED)
 chat_log.place(x=6, y=6, height=486, width=488)
 
-chat_log.tag_config('usuario', background="#D1E7DD", foreground="black")
-chat_log.tag_config('chatbot', background="#6C757D", foreground="white")
+chat_log.tag_config('usuario', foreground='blue')
+chat_log.tag_config('chatbot', foreground='green')
 
 entrada_usuario = tk.Entry(janela, bg="white")
 entrada_usuario.place(x=6, y=500, height=40, width=300)
 
 botao_enviar = tk.Button(janela, text="Enviar", command=enviar_mensagem)
-botao_enviar.place(x=320, y=500, height=40, width=70)
-botao_finalizar = tk.Button(janela, text="Finalizar Sessão", command=finalizar_sessao_botao)
-botao_finalizar.place(x=400, y=500, height=40, width=90)
+botao_enviar.place(x=310, y=500, height=40, width=70)
+
+botao_finalizar = tk.Button(janela, text="Finalizar", command=finalizar_sessao_botao)
+botao_finalizar.place(x=390, y=500, height=40, width=70)
 
 def mensagem_introducao():
     chat_log.config(state=tk.NORMAL)
